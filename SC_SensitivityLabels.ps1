@@ -41,20 +41,19 @@
 [OutputType()]
 [CmdletBinding(DefaultParameterSetName)]
 Param (
-    [Parameter(Mandatory = $False, Position = 0, ParameterSetName = 'Credential')]
-    [PSCredential]$Credential,
-
-    [Parameter(Mandatory = $False, Position = 0, ParameterSetName = 'MFA')]
-    [Switch]$MFA,
-
-    [Parameter(Mandatory=$true)]
-    [ValidateSet("get","test")]
+    [Parameter(Mandatory=$true, Position = 0)]
+    [ValidateSet("get")]
     [string]$Mode,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, Position = 1)]
     [ValidateSet("Label","LabelPolicy")]
-    [string]$Type
+    [string]$Type,
 
+    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'Credential')]
+    [PSCredential]$Credential,
+
+    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'MFA')]
+    [Switch]$MFA
 ) 
 
 
@@ -174,6 +173,7 @@ Process{
                 }
             }
         }
+        # TBC 
         "test" {
             switch ($Type) {
                 "Label" {
