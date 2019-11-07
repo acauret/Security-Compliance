@@ -16,12 +16,30 @@
   Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies 
 .DESCRIPTION
   Demo Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies
-.PARAMETER  Platform
-  Description: Name of the OS being targeted
-  Possible values: AndroidE, iOS or Win10	
+.PARAMETER  Mode
+  Description: Determines the mode of operation of the script
+  Possible values: get
+.PARAMETER  Type
+Description: Determines what aspect of Sensitivity labels to query
+Possible values: Label, LabelPolicy
+.PARAMETER  Credential
+  Description: For use with connecting the Security and Compliance center using Basic Auth
+  Possible values: User Principal Name
+.PARAMETER  MFA
+Description: Switch to specifiy using MFA with modern auth setting
+Possible values: -MFA
 .EXAMPLE
-  .\Intune-MAM.ps1 -Platform AndroidE -GraphApiVersion Beta -Mode get -Path '.\MAM\AppProtection\Prod\Production Android Browser.json'
-  Gets the current policy settings for a specific Policy 
+  .\SC_SensitivityLabels.ps1 -Mode get -Type Label -MFA
+  Connects to the S&C Center to query the current label settings using Modern auth
+.EXAMPLE
+.\SC_SensitivityLabels.ps1 -Mode get -Type LabelPolicy -MFA
+Connects to the S&C Center to query the current labelPolicy settings using Modern auth
+.EXAMPLE
+.\SC_SensitivityLabels.ps1 -Mode get -Type LabelPolicy
+Connects to the S&C Center to query the current labelPolicy settings using Basic auth
+.EXAMPLE
+.\SC_SensitivityLabels.ps1 -Mode get -Type Label
+Connects to the S&C Center to query the current label settings using Basic auth
 .INPUTS
    <none>
 .OUTPUTS
