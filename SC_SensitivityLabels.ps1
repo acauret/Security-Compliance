@@ -1,40 +1,42 @@
-<# 
-#Version : 2.1
-# 12.Sep.2019 = Andrew Auret
-# Converted to Pester
-## $currentDate =  (Get-Date -Format "yyyy-MM-dd_HHmm").ToString()
-## Invoke-Pester -Script @{Path = '.\O365ValidationEXO-OD4Bver2.1.ps1'; Parameters = @{Service = 'Exchange';MFA = $true}} -Show All -OutputFormat NUnitXml -OutputFile .\$currentDate.xml  
-## Invoke-Command -ScriptBlock{.\ReportUnit.exe "$($currentDate).xml"}
-## Update Parameters in script block to include MFA ($True) or Basic Auth ($false)
-# Update SPODomain to reflect correct Tenant (line 46)
+###########################################################################################################
+# Script Disclaimer
+###########################################################################################################
+# This script is not supported under any Microsoft standard support program or service.
+# This script is provided AS IS without warranty of any kind.
+# Microsoft disclaims all implied warranties including, without limitation, any implied warranties of
+# merchantability or of fitness for a particular purpose. The entire risk arising out of the use or
+# performance of this script and documentation remains with you. In no event shall Microsoft, its authors,
+# or anyone else involved in the creation, production, or delivery of this script be liable for any damages
+# whatsoever (including, without limitation, damages for loss of business profits, business interruption,
+# loss of business information, or other pecuniary loss) arising out of the use of or inability to use
+# this script or documentation, even if Microsoft has been advised of the possibility of such damages.
 
-#Version : 2.0
-# 02.Sep.2019 = Gabriel Antohi
-# Added a run parameter to skip the EXO-SPO Connect sessions: type Yes
-    # To Connect using O365 Managemtn shells press any key
-# Extract the exact UPN and the Primary Email Address for the user for comparison (as Identity can be one or another in get-recipient)
-# Separate the verification for Forwarding SMTP Address into incorrect and not set
-# Added OD4B validation against the UPN not $CurrentUser variable and catch any "Cannot find Site" error to detect non-existent OD4B site 
-# Added the variable $IdentityColumn = "Target Mailbox", as in the GMAIL batch file, for easy manipulation of batches
-# Catch the errors and write it in the output file
-# Make decision about the input file: .CSV or .TSV - based on the file name extension 
-
-O365ValidationEXO-OD4B.ps1 : This script performs Pre-flight Validation for GDRIVE and GMAIL Migrations
-
-WCC Tenant URL = https://warwickshiregovuk-admin.sharepoint.com/
-WCC Domain = warwickshire.gov.uk
-SPO Domain = warwickshiregovuk
-FWD Address domain = @pilot.warwickshire.gov.uk
-#$TenantUrl = Read-Host "Enter the SharePoint Online Tenant Admin Url"
-
-For this script to run properly you need AAD, EXO, SPO Management Shells 
-
-Sample input file:
-Target Mailbox
-_________________________
-User1@warwickshire.gov.uk
-
+<#
+.SYNOPSIS
+  Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies 
+.DESCRIPTION
+  Demo Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies
+.PARAMETER  Platform
+  Description: Name of the OS being targeted
+  Possible values: AndroidE, iOS or Win10	
+.EXAMPLE
+  .\Intune-MAM.ps1 -Platform AndroidE -GraphApiVersion Beta -Mode get -Path '.\MAM\AppProtection\Prod\Production Android Browser.json'
+  Gets the current policy settings for a specific Policy 
+.INPUTS
+   <none>
+.OUTPUTS
+   <none>
+.NOTES
+    Script Name     : SC_SensitivityLabels.ps1
+    Requires        : Powershell Version 5.1
+    Tested          : Powershell Version 5.1
+    Author          : Andrew Auret
+    Email           : 
+    Version         : 1.0
+    Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)    
 #>
+
+#######################################################################################################################
 #--------------------------------------------------------------------------------------------------------
 [OutputType()]
 [CmdletBinding(DefaultParameterSetName)]
@@ -50,129 +52,6 @@ Param (
     [Switch]$MFA
 )
 
-#region Functions
-
-function Initialize-Modules() {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$True)]
-        [String] $Name
-    )
-
-    Write-Verbose "Checking for $Name module..."
-
-    If ($Name -eq "CreateExoPSSession"){
-            $Module = Get-Module -Name $Name
-    }
-    else {
-        $Module = Get-Module -Name $Name -ListAvailable
-    }
-
-    if ($null -eq $Module) {
-        Write-Verbose ""
-        Write-Verbose "$($Name) Powershell module not present..." 
-        Write-Verbose "Installing $($Name)" 
-        Write-Verbose ""
-        If ($Name -eq "CreateExoPSSession"){
-            Import-Module (Get-ChildItem -Path $scriptFolder\Exchange_Online_Module\ -Filter '*ExoPowershellModule.dll' -Recurse | ForEach-Object{(Get-ChildItem -Path $_.Directory -Filter CreateExoPSSession.ps1)} | Sort-Object LastWriteTime | Select-Object -Last 1).FullName  -Verbose
-        }
-        else {
-                Write-Verbose ""
-                Write-Verbose "$($Name) Powershell module not present..." 
-                Write-Verbose "Installing $($Name)" 
-                Write-Verbose ""
-                Install-Module -Name $Name -Scope CurrentUser -Force -Verbose
-        }
-    }
-    Else{
-        Write-Verbose "$($Name) Powershell module is installed"
-    }
-}
-Function Get-FileName($InitialDirectory, $Title)
-{   
-    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-null
-
-    $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
-    $OpenFileDialog.Title = $Title
-    $OpenFileDialog.InitialDirectory = $InitialDirectory
-    $OpenFileDialog.Filter = "All files (*.*)| *.*"
-    $OpenFileDialog.ShowDialog() | Out-Null
-    $OpenFileDialog.FileName
-    $OpenFileDialog.ShowHelp = $true
-}
-
-function WCCBatch($Users)
-{
-Write-Verbose "Starting Validation of all Users from Input File..." 
-
-Write-Verbose "Getting a list of all the users from the domain 1st "
-
-$Users | ForEach-Object {
-    Try
-    {	 
-        $currentUser = $_.$IdentityColumn
-        Describe "Checks for User:$($currentUser)"{
-            #
-
-            $expression = "EmailAddresses -eq '$currentUser'"
-            $UserRecipientAttributes = Get-Recipient -Filter $expression | Select-Object Name, RecipientType
-            $UserAttributes = Get-MailBox -Filter $expression  |  Select-Object PrimarySmtpAddress, UserPrincipalName, ForwardingSMTPAddress
-            $userTargetAddress = $UserAttributes.ForwardingSMTPAddress
-            $UPNAddress = $UserAttributes.UserPrincipalName
-            $emailAddress = $UserAttributes.PrimarySmtpAddress
-            $PersonalName = $UPNAddress -replace "[^a-zA-Z0-9,-]", "_" # for OD4B
-            #
-            #
-            It "Verifying that $($currentUser) exists in the $($SPODomain) O365 Tenant"{
-                $UserRecipientAttributes.Name | Should Not Be $Null
-            }
-            #
-            It "Verifying that $($currentUser) has a Mailbox provisioned on the $($SPODomain) Office 365 Tenant"{
-                $UserRecipientAttributes.RecipientType | Should Be "UserMailBox"
-            }
-
-
-            It "Verifying that $($currentUser) has a ForwardingSMTPAddress set [Not Null]"{
-                $userTargetAddress | Should Not Be $Null
-            }
-            #
-            It "Verifying that $($currentUser) has the ForwardingSMTPAddress set correctly [Should match $($ForwardingDomain)]"{
-                If ($Null -eq $userTargetAddress){
-                    Set-ItResult -Skipped -Because 'The ForwardingSMTPAddress is $Null or Empty'
-                }
-                ($userTargetAddress -like "*@"+$ForwardingDomain) | should Be $True
-            }
-            #
-            It "Verifying that $($currentUser) Email Address Matches the UPN Address"{
-                ($emailAddress -eq $UPNAddress) | should Be $True
-            }
-            #
-            It "Verifying that $($currentUser) has a OD4B site on $($SPODomain) O365 Tenant"{
-                $OD4BSiteURL = "https://$SPOdomain-my.sharepoint.com/personal/$PersonalName"
-                ([bool] (Get-SPOSite -Identity $OD4BSiteURL -ErrorAction SilentlyContinue | Select-Object owner)) | should Be $True
-            }
-        }
-
-
-    }
-    Catch [Exception]
-    {
-        $Exception = $_.Exception
-        if ($Exception -like "*Cannot get site*")
-        {
-            Write-Warning "User doens't have an OD4B site on O365 WCC Tenant."
-        }
-        else
-        {
-            Write-Host "There was an error runing the script in Office 365 WCC Tenant." -ForegroundColor Red
-        }
-    }
-}
-
-Write-Host "Script Execution Completed Successfully." -ForegroundColor Green
-exit
-}
-#endregion
 #--------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------
 $VerbosePreference = "Continue" 
