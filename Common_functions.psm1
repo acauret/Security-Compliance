@@ -23,7 +23,7 @@ function Initialize-Modules()
         Write-Verbose "Installing $($Name)" 
         Write-Verbose ""
         If ($Name -eq "CreateExoPSSession"){
-            Import-Module (Get-ChildItem -Path $scriptFolder\Exchange_Online_Module\ -Filter '*ExoPowershellModule.dll' -Recurse | ForEach-Object{(Get-ChildItem -Path $_.Directory -Filter CreateExoPSSession.ps1)} | Sort-Object LastWriteTime | Select-Object -Last 1).FullName  -Verbose
+            Import-Module (Get-ChildItem -Path $scriptFolder\Exchange_Online_Module\ -Filter '*ExoPowershellModule.dll' -Recurse | ForEach-Object{(Get-ChildItem -Path $_.Directory -Filter CreateExoPSSession.ps1)} | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
         }
         else {
                 Write-Verbose ""
@@ -51,3 +51,4 @@ Function Get-FileName($InitialDirectory, $Title)
 }
 
 #endregion
+Export-ModuleMember -Function Initialize-Modules

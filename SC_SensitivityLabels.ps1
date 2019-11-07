@@ -37,94 +37,73 @@
 #>
 
 #######################################################################################################################
-#--------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------#
 [OutputType()]
 [CmdletBinding(DefaultParameterSetName)]
 Param (
-    [Parameter(Mandatory = $True, Position = 1)]
-    [ValidateSet('AzureAD', 'Exchange',  'SharePoint')]
-    [string[]]$Service,
-    [Parameter(Mandatory = $False, Position = 2)]
-    [string[]]$SPODomain = "warwickshiregovuk"    , 
-    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'Credential')]
+    [Parameter(Mandatory = $False, Position = 1, ParameterSetName = 'Credential')]
     [PSCredential]$Credential,
-    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'MFA')]
+    [Parameter(Mandatory = $False, Position = 1, ParameterSetName = 'MFA')]
     [Switch]$MFA
-)
+) 
 
 #--------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------
 $VerbosePreference = "Continue" 
-
-$users= $null
-$OutputFile = $null
-$InputFile = $null
-$InputFileType = $null
 $scriptPath = $myInvocation.MyCommand.Path
-$scriptFolder = Split-Path $scriptPath;
-$IdentityColumn = "Target Mailbox" #align this value with what you have in the CSV batch file for GMAIL
-$currentDate =  (Get-Date -Format "yyyy-MM-dd_HHmm").ToString()
-#$OutputFile = $scriptFolder + "\" + $currentDate + '_Result.csv'
-
-#$SPODomain = "warwickshiregovuk"
-$ForwardingDomain = "pilot.warwickshire.gov.uk"
-$TenantUrl = "https://$SPODomain-admin.sharepoint.com/"
-#
+$scriptFolder = Split-Path $scriptPath
 #
 
+Write-Verbose "Checking for Common_Functions module..."
+
+$CommonModule = Get-Module -Name "Common_Functions" -ListAvailable
+
+if ($null -eq $CommonModule) {
+    Write-Verbose ""
+    Write-Verbose "Common_Functions Powershell module not installed..." 
+    Write-Verbose "Installing Common_Functions module" 
+    Write-Verbose ""
+    Import-Module $scriptFolder\Common_Functions.psd1 -Force -Verbose
+}
+Else{
+    Write-Verbose "Common_Functions Powershell module is installed"
+}
+#
 If ($MFA.IsPresent){
     Initialize-Modules("CreateExoPSSession")
 }
-Initialize-Modules("Microsoft.Online.SharePoint.PowerShell")
-Initialize-Modules("Pester")
-#
 If (!($MFA.IsPresent))
 {
-    Write-Verbose "Gathering Credentials for non-MFA sign on"
-    $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
+    If (!($Credential.UserName)){
+        Write-Verbose "Gathering Credentials for non-MFA sign on"
+        $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
+    }
 }
 #
 If (!(Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
     If ($MFA.IsPresent){
         . $scriptFolder"\Exchange_Online_Module\CreateExoPSSession.ps1"
-        Connect-IPPSSession -ConnectionUri https://outlook.office365.com/powershell-liveid 
+        Connect-IPPSSession
         Push-Location $scriptFolder
-        Connect-SPOService -Url $TenantUrl
     }
     else {
         $newPSSessionSplat = @{
             ConfigurationName = 'Microsoft.Exchange'
-            ConnectionUri   = "https://outlook.office365.com/powershell-liveid"
+            ConnectionUri   = "https://ps.compliance.protection.outlook.com/powershell-liveid/"
             Authentication    = 'Basic'
             Credential       = $Credential
             AllowRedirection  = $true
         }
-        $Session = New-PSSession @newPSSessionSplat
-        Write-Verbose "Connecting to Exchange Online"
-        Import-PSSession $Session -AllowClobber
-        Connect-SPOService -Url $TenantUrl -Credential $Credential
+        try{
+            $Session = New-PSSession @newPSSessionSplat -ErrorAction Stop
+            Write-Verbose "Connecting to Security & Compliance Center"
+            Import-PSSession $Session -AllowClobber -ErrorAction Stop
+        }
+        catch{
+            Write-Output $_.Exception.Message
+            Write-Error "Please connect using Multi-Factor authentication instead using the -MFA switch"
+            break            
+        }
     }
 }
-
-$InputFile = Get-FileName -initialDirectory $scriptFolder -Title "Please Select the Input File to GMail and GDrive Pre-Flight Tool"
-if($InputFile -eq "")
-{
-    Write-Host ""
-    Write-Host -ForegroundColor Red "No File Found. Please select File again. Quitting ..... "
-    Exit
-}
-elseif ($InputFile -like "*.csv")
-{
-    $Users = Import-Csv $InputFile | Select-Object $IdentityColumn
-}
-else
-{
-    $Users = Import-Csv $InputFile -Delimiter "`t" | Select-Object $IdentityColumn
-}
-
-Write-Host "Input File : " $InputFile
-Write-Host "Result File : " $OutputFile
-
-WCCBatch($Users)
-
 
