@@ -61,7 +61,7 @@ Param (
 #--------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------
 Process{
-    $VerbosePreference = "Continue" 
+    #$VerbosePreference = "Continue" 
     $scriptPath = $myInvocation.MyCommand.Path
     $scriptFolder = Split-Path $scriptPath
     #
@@ -124,7 +124,7 @@ Process{
         "get" {
             switch ($Type) {
                 "Label" {
-                    Write-Output "Getting the content of the current Sensitivity Labels"
+                    Write-Verbose  "Getting the content of the current Sensitivity Labels"
                     $labels = Get-Label
                     foreach($label in $labels){
                         $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name}
@@ -151,7 +151,14 @@ Process{
                             Write-Output "Content marking: Not set"
                         }
                         #
-                        Write-Output "Settings       : $($label | Select-Object -ExpandProperty Settings)"
+                        $Settings = $label | Select-Object -ExpandProperty Settings
+                        foreach($list in $Settings.GetEnumerator()){
+                            if ($list.Contains("color")){
+                                $list = $list -replace "\W",''
+                                $color = $list -replace "color","#"
+                                Write-Output "Label colour   : $($color)"
+                            }
+                        }
                         Write-Output ""
                     }
 
