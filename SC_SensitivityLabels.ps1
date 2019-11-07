@@ -149,7 +149,7 @@ Process{
                     Write-Verbose  "Getting the content of the current Sensitivity Labels"
                     $labels = Get-Label
                     foreach($label in $labels){
-                        $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name}
+                        $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name} -ErrorAction SilentlyContinue
                         Write-Output "Name           : $($label.Name)"
                         Write-Output "Created by     : $($label.CreatedBy)"
                         Write-Output "Last modified  : $($label.LastModifiedBy)"
