@@ -128,25 +128,42 @@ Process{
                     $labels = Get-Label
                     foreach($label in $labels){
                         $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name}
-                        Write-Output "Name         : $($label.Name)"
-                        Write-Output "Created by   : $($label.CreatedBy)"
-                        Write-Output "Last modified: $($label.LastModifiedBy)"
-                        Write-Output "Display Name : $($label.DisplayName)"
-                        Write-Output "Tooltip      : $($label.Tooltip)"
-                        Write-Output "Description  : $($label.Comment)"
+                        Write-Output "Name           : $($label.Name)"
+                        Write-Output "Created by     : $($label.CreatedBy)"
+                        Write-Output "Last modified  : $($label.LastModifiedBy)"
+                        Write-Output "Display Name   : $($label.DisplayName)"
+                        Write-Output "Tooltip        : $($label.Tooltip)"
+                        Write-Output "Description    : $($label.Comment)"
+                        #
                         $labelEncryptAction = ($labelpolicyRule | Where-Object {$_.LabelActionName -eq 'encrypt'}).LabelActionName
                         If ($labelEncryptAction -eq "encrypt"){
-                            Write-Output "Encryption   : On"
+                            Write-Output "Encryption     : On"
                         }
                         else {
-                            Write-Output "Encryption   : Off"
+                            Write-Output "Encryption     : Off"
                         }
+                        #
+                        $ContentMarking = ($labelpolicyRule | Where-Object {$_.LabelActionName -like 'applycontentmarking*'}).LabelActionName
+                        If (!($null -eq $ContentMarking)){
+                            Write-Output "Content marking: $($ContentMarking)"
+                        }
+                        else {
+                            Write-Output "Content marking: Not set"
+                        }
+                        #
+                        Write-Output "Settings       : $($label | Select-Object -ExpandProperty Settings)"
                         Write-Output ""
                     }
 
                   }
                 "LabelPolicy" {
-
+                    Write-Output "Getting the content of the current Sensitivity Label policies"
+                    $labelpolicies = Get-LabelPolicy
+                    foreach($labelpolicy in $labelpolicies){
+                        Write-Output "Name           : $($labelpolicy.Name)"
+                        Write-Output "Labels         : $($labelpolicy.Labels)"
+                        Write-Output "Settings       : $($labelpolicy | Select-Object -ExpandProperty Settings)"
+                    }
                 }
             }
         }
