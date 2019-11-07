@@ -40,18 +40,23 @@ Connects to the S&C Center to query the current labelPolicy settings using Basic
 .EXAMPLE
 .\SC_SensitivityLabels.ps1 -Mode get -Type Label
 Connects to the S&C Center to query the current label settings using Basic auth
+.EXAMPLE
+get-help .\SC_SensitivityLabels.ps1 -Detailed
+Displays the help file
 .INPUTS
    <none>
 .OUTPUTS
    <none>
 .NOTES
     Script Name     : SC_SensitivityLabels.ps1
-    Requires        : Powershell Version 5.1
+    Requires        : Powershell Version 5.1, Windows Remote Management (WinRM) on your computer needs to allow basic authentication
     Tested          : Powershell Version 5.1
     Author          : Andrew Auret
     Email           : 
     Version         : 1.0
-    Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)    
+    Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)
+    
+    
 #>
 
 #######################################################################################################################
