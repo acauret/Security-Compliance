@@ -1,0 +1,10 @@
+﻿Name (Required),Comment (Optional),IsRecordLabel (Required),RetentionAction (Optional),RetentionDuration (Optional),RetentionType (Optional),ReviewerEmail (Optional)
+RecordLabel_t_1,With Review,$false,KeepAndDelete,1,CreationAgeInDays,adelev@m365x073057.onmicrosoft.com
+RecordLabel_t_2,Without Review,$false,KeepAndDelete,1,CreationAgeInDays,adelev@m365x073057.onmicrosoft.com
+RecordLabel_t_3,Retention Trigger Tagged,$false,Delete,1,TaggedAgeInDays,
+RecordLabel_t_4,Retention Trigger Modification,$false,Keep,1,ModificationAgeInDays,
+DocLabel_t_5,Keep,$false,Keep,1,ModificationAgeInDays,
+DocLabel_t_6,KeepAndDelete,$false,KeepAndDelete,1,TaggedAgeInDays,adelev@m365x073057.onmicrosoft.com
+DocLabel_t_7,Delete,$false,KeepAndDelete,1,TaggedAgeInDays,adelev@m365x073057.onmicrosoft.com
+DocLabel_t_8,Retention In Weeks,$false,Keep,1,ModificationAgeInDays,
+DocLabel_t_9,Retention In Weeks,$false,Delete,1,ModificationAgeInDays,
