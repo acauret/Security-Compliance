@@ -227,6 +227,7 @@ Process{
                     if ($ResultCSV)
                     {
                         #ExportCreatedComplianceTag -LabelFilePath $LabelListCSV
+                        $global:tagPubRetFile = $retfilePath
                         Create-ResultCSV -ResultFolderRoot $scriptFolder -ResultFunction "Tag_Publish" | Out-Null
                         ExportPublishedComplianceTagAndPolicy -PolicyFilePath $PolicyListCSV 
                     }
