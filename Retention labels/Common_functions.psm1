@@ -186,7 +186,7 @@ Function CreateComplianceTag
             $cmdlet = 'New-ComplianceTag'
             if ([String]::IsNullOrEmpty($lab.'Name (Required)'))
             {
-                WriteToLog -Type "Failed" -Message "Could not acquire table for writing."
+                WriteToLog -Type "Failed" -Message "Could not acquire table for writing - 'Name (Required)'"
                 throw;
             }
             else
@@ -232,6 +232,13 @@ Function CreateComplianceTag
                     $eml = $eml.Substring(0, $eml.Length - 1) + ')'
                     
                     $cmdlet += " -ReviewerEmail " + $eml
+                }
+            }
+            else {
+                if (![String]::IsNullOrEmpty($lab.'RetentionAction (Optional)')){
+                    If (!($lab.'RetentionAction (Optional)')){
+                        Write-Output "Please ensure that this field is completed with Delete and KeepAndDelete"
+                    }
                 }
             }
             # If the tag already exists, skip for creation

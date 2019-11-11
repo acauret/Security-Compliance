@@ -191,7 +191,36 @@ Process{
                     foreach($labelpolicy in $labelpolicies){
                         Write-Output "Name           : $($labelpolicy.Name)"
                         Write-Output "Labels         : $($labelpolicy.Labels)"
-                        Write-Output "Settings       : $($labelpolicy | Select-Object -ExpandProperty Settings)"
+                        Write-Output "-- Settings --"
+                        $Settings = $labelpolicies | Select-Object -ExpandProperty Settings
+                        foreach($list in $Settings){
+                            #Users must provide justification to remove a label or lower classification label
+                            if ($list.Contains("requiredowngradejustification")){
+                                $list = $list -replace "\W",''
+                                $rdgj = $list -replace "requiredowngradejustification",""
+                                Write-Output "Require a justification for changing a label              : $($rdgj)"
+                            }
+                            #
+                            #Label is mandatory
+                            if ($list.Contains("mandatory")){
+                                $list = $list -replace "\W",''
+                                $mandatory = $list -replace "mandatory",""
+                                Write-Output "Require users to apply a label to their email or documents: $($mandatory)"
+                            }
+                            #For email messages with attachments, apply a label that matches the highest classification of those attachments
+                            if ($list.Contains("attachmentaction")){
+                                $list = $list -replace "\W",''
+                                $attachmentaction = $list -replace "attachmentaction",""
+                                Write-Output "For email messages with attachments, apply a label that matches the highest classification of those attachments: $($attachmentaction)"
+                            }
+                            #hidebarbydefault
+                            if ($list.Contains("hidebarbydefault")){
+                                $list = $list -replace "\W",''
+                                $hidebarbydefault = $list -replace "hidebarbydefault",""
+                                Write-Output "HideBarByDefault                                          : $($hidebarbydefault)"
+                            }
+                        }
+                        Write-Output ""
                     }
                 }
             }
