@@ -1,55 +1,32 @@
-#region Functions
-
-function Initialize-Modules() 
-{
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$True)]
-        [String] $Name
-    )
-
-    Write-Verbose "Checking for $Name module..."
-
-    If ($Name -eq "CreateExoPSSession"){
-            $Module = Get-Module -Name $Name
-    }
-    else {
-        $Module = Get-Module -Name $Name -ListAvailable
-    }
-
-    if ($null -eq $Module) {
-        Write-Verbose ""
-        Write-Verbose "$($Name) Powershell module not present..." 
-        Write-Verbose "Installing $($Name)" 
-        Write-Verbose ""
-        If ($Name -eq "CreateExoPSSession"){
-            Import-Module (Get-ChildItem -Path $scriptFolder\Exchange_Online_Module\ -Filter '*ExoPowershellModule.dll' -Recurse | ForEach-Object{(Get-ChildItem -Path $_.Directory -Filter CreateExoPSSession.ps1)} | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
-        }
-        else {
-                Write-Verbose ""
-                Write-Verbose "$($Name) Powershell module not present..." 
-                Write-Verbose "Installing $($Name)" 
-                Write-Verbose ""
-                Install-Module -Name $Name -Scope CurrentUser -Force -Verbose
-        }
-    }
-    Else{
-        Write-Verbose "$($Name) Powershell module is installed"
-    }
-}
-Function Get-FileName($InitialDirectory, $Title)
-{   
-    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-null
-
-    $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
-    $OpenFileDialog.Title = $Title
-    $OpenFileDialog.InitialDirectory = $InitialDirectory
-    $OpenFileDialog.Filter = "All files (*.*)| *.*"
-    $OpenFileDialog.ShowDialog() | Out-Null
-    $OpenFileDialog.FileName
-    $OpenFileDialog.ShowHelp = $true
-}
-
+<#
+. Steps: Import and Publish Compliance Tag
+	○ Load compliance tag csv file 
+	○ Validate csv file input
+    ○ Create compliance tag
+    ○ Create compliance policy
+	○ Publish compliance tag for the policy
+    ○ Generate the log for tags creation
+    ○ Generate the csv result for the tags created and published
+. Syntax
+	.\Publish-ComplianceTag.ps1 [-LabelListCSV <string>] [-PolicyListCSV <string>] 
+. Detailed Description
+	1) [-LabelListCSV <string>]
+    -LabelListCSV ".\SampleInputFile_LabelList.csv"
+    Load compliance tag for creation.
+    2) [-PolicyListCSV <string>]
+    -PolicyListCSV ".\SampleInputFile_PolicyList.csv"
+    Load compliance tag for creation.
+#>
+param (
+    [Parameter(Mandatory = $true)]
+    [string]$LabelListCSV = "",
+    [Parameter(Mandatory = $true)]
+    [string]$PolicyListCSV = "",
+    [Switch]$ResultCSV
+)
+# -------------------
+# File operation
+# -------------------
 Function FileExist
 {
     Param(
@@ -76,7 +53,9 @@ Function FileExist
         WriteToLog -Type "Succeed" -Message "[File: $FilePath] The file is found"
     }
 }
-
+# -------------------
+# Log operation
+# -------------------
 Function WriteToLog
 {
     Param(
@@ -109,15 +88,14 @@ Function Create-Log
     $folderExist = Test-Path "$logFolderPath"
     if (!$folderExist)
     {
-        New-Item "$logFolderPath" -type directory | Out-Null
+        $folder = New-Item "$logFolderPath" -type directory
     }
     $date = Get-Date -Format 'MMddyyyy_HHmmss'
-    $global:logfilePath = "$logFolderPath\Log_{0}_{1}.txt" -f $LogFunction, $date
+    $logfilePath = "$logFolderPath\Log_{0}_{1}.txt" -f $LogFunction, $date
     Write-Verbose "Log file is writen to: $logfilePath"
-    New-Item $logfilePath  -type file
+    $logfile = New-Item $logfilePath  -type file
     return $logfilePath
 }
-
 Function Create-ResultCSV
 {
     Param(
@@ -132,15 +110,27 @@ Function Create-ResultCSV
     $folderExist = Test-Path "$retFolderPath"
     if (!$folderExist)
     {
-        New-Item "$retFolderPath" -type directory | Out-Null
+        $folder = New-Item "$retFolderPath" -type directory
     }
     $date = Get-Date -Format 'MMddyyyy_HHmmss'
-    $global:retfilePath = "$retFolderPath\Result_{0}_{1}.csv" -f $ResultFunction, $date
+    $retfilePath = "$retFolderPath\Result_{0}_{1}.csv" -f $ResultFunction, $date
     Write-Verbose "Result file is writen to: $retfilePath"
-    New-Item $retfilePath  -type file | Out-Null
+    $retfile = New-Item $retfilePath  -type file
     return $retfilePath
 }
-
+# -------------------
+# Prepare Log File
+# -------------------
+$scriptPath = '.\'
+$logfilePath = Create-Log -LogFolderRoot $scriptPath -LogFunction "Publish_Compliance_Tag"
+if ($ResultCSV)
+{
+    $tagRetFile = Create-ResultCSV -ResultFolderRoot $scriptPath -ResultFunction "Tag_Creation"
+    $tagPubRetFile = Create-ResultCSV -ResultFolderRoot $scriptPath -ResultFunction "Tag_Publish"
+}
+# -------------------
+# Invoke Powershell cmdlet
+# -------------------
 Function InvokePowerShellCmdlet
 {
     Param(
@@ -150,7 +140,7 @@ Function InvokePowerShellCmdlet
     try
     {
         WriteToLog -Type "Start" -Message "Execute Cmdlet : '$CmdLet'" 
-        Invoke-Expression $CmdLet -ErrorAction SilentlyContinue
+        return Invoke-Expression $CmdLet -ErrorAction SilentlyContinue
     }
     catch
     {
@@ -159,7 +149,9 @@ Function InvokePowerShellCmdlet
         return $null
     }
 }
-
+# -------------------
+# Create Compliance Tag
+# -------------------
 Function CreateComplianceTag
 {
     Param(
@@ -259,7 +251,9 @@ Function CreateComplianceTag
 	    WriteToLog -Type "Failed" "Error in input"
     }
 }
-
+# -------------------
+# Create Retention Compliance Policy
+# -------------------
 Function CreateRetentionCompliancePolicy
 {
     Param(
@@ -274,7 +268,6 @@ Function CreateRetentionCompliancePolicy
     {
         # Import csv
         $list = Import-Csv -Path $FilePath
-
         # Retrieve existing retention compliance policy
         $policies = InvokePowerShellCmdlet "Get-RetentionCompliancePolicy"
         foreach($rp in $list)
@@ -286,7 +279,7 @@ Function CreateRetentionCompliancePolicy
             $cmdlet = 'New-RetentionCompliancePolicy'
             if ([String]::IsNullOrEmpty($rp.'Policy Name (Required)'))
             {
-                WriteToLog -Type "Failed" -Message "Could not acquire table for writing - 'Policy Name (Required)'."
+                WriteToLog -Type "Failed" -Message "Could not acquire table for writing."
                 throw;
             }
             else
@@ -296,8 +289,7 @@ Function CreateRetentionCompliancePolicy
             }
             if ([String]::IsNullOrEmpty($rp.'Enabled (Required)'))
             {
-                WriteToLog -Type "Failed" -Message "Could not acquire table for writing - 'Enabled (Required)'"
-                write-host $rp
+                WriteToLog -Type "Failed" -Message "Could not acquire table for writing."
                 throw;
             }
             else
@@ -396,7 +388,9 @@ Function CreateRetentionCompliancePolicy
         WriteToLog -Type "Failed" "Error in input"
     }
 }
-
+# -------------------
+# Publish Compliance Tag
+# -------------------
 Function PublishComplianceTag
 {
     Param(
@@ -455,7 +449,9 @@ Function PublishComplianceTag
         WriteToLog -Type "Failed" "Error in input"
     }
 }
-
+# -------------------
+# Export All Labels Created in The Process
+# -------------------
 Function ExportCreatedComplianceTag
 {
     Param(
@@ -508,10 +504,12 @@ Function ExportCreatedComplianceTag
     }
     catch
     {
-        WriteToLog -Type "Failed" "Error in exporting results - ExportCreatedComplianceTag"
+        WriteToLog -Type "Failed" "Error in exporting results."
     }
 }
-
+# -------------------
+# Export All Published Labels and Policies in The Process
+# -------------------
 Function ExportPublishedComplianceTagAndPolicy
 {
     Param(
@@ -606,16 +604,13 @@ Function ExportPublishedComplianceTagAndPolicy
         WriteToLog -Type "Failed" "Error in exporting results."
     }
 }
-#endregion
-Export-ModuleMember -Function Initialize-Modules, `
-                            ExportPublishedComplianceTagAndPolicy, `
-                            ExportCreatedComplianceTag, `
-                            PublishComplianceTag, `
-                            CreateRetentionCompliancePolicy, `
-                            CreateComplianceTag, `
-                            InvokePowerShellCmdlet, `
-                            Create-ResultCSV, `
-                            Create-Log, `
-                            WriteToLog, `
-                            FileExist, `
-                            Get-FileName
+# Create compliance tag
+CreateComplianceTag -FilePath $LabelListCSV
+# Create retention policy and publish compliance tag with the policy
+CreateRetentionCompliancePolicy -FilePath $PolicyListCSV
+# Export to result csv
+if ($ResultCSV)
+{
+    ExportCreatedComplianceTag -LabelFilePath $LabelListCSV
+    ExportPublishedComplianceTagAndPolicy -PolicyFilePath $PolicyListCSV 
+}

@@ -206,12 +206,6 @@ Process{
     # Prepare LogFile
     Create-Log -LogFolderRoot $scriptFolder -LogFunction "Publish_Compliance_Tag" | Out-Null
 
-    if ($PSBoundParameters.ContainsKey(("ResultCSV")))
-    {
-        Create-ResultCSV -ResultFolderRoot $scriptFolder -ResultFunction "Tag_Creation" | Out-Null
-        Create-ResultCSV -ResultFolderRoot $scriptFolder -ResultFunction "Tag_Publish" | Out-Null
-    }
-
     switch ($Mode) {
         "create" {
             switch ($Type) {
@@ -221,8 +215,9 @@ Process{
                     # Export to result csv
                     if ($ResultCSV)
                     {
+                        Create-ResultCSV -ResultFolderRoot $scriptFolder -ResultFunction "Tag_Creation" | Out-Null
+                        $global:tagRetFile = $retfilePath
                         ExportCreatedComplianceTag -LabelFilePath $LabelListCSV
-                        ExportPublishedComplianceTagAndPolicy -PolicyFilePath $PolicyListCSV 
                     }
                 }
                 "LabelPolicy" {
@@ -231,7 +226,8 @@ Process{
                     # Export to result csv
                     if ($ResultCSV)
                     {
-                        ExportCreatedComplianceTag -LabelFilePath $LabelListCSV
+                        #ExportCreatedComplianceTag -LabelFilePath $LabelListCSV
+                        Create-ResultCSV -ResultFolderRoot $scriptFolder -ResultFunction "Tag_Publish" | Out-Null
                         ExportPublishedComplianceTagAndPolicy -PolicyFilePath $PolicyListCSV 
                     }
                 }
