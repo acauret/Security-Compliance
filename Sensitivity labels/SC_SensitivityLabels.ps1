@@ -10,7 +10,6 @@
 # whatsoever (including, without limitation, damages for loss of business profits, business interruption,
 # loss of business information, or other pecuniary loss) arising out of the use of or inability to use
 # this script or documentation, even if Microsoft has been advised of the possibility of such damages.
-
 <#
 .SYNOPSIS
   Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies 
