@@ -200,7 +200,6 @@ Process{
                                 $rdgj = $list -replace "requiredowngradejustification",""
                                 Write-Output "Require a justification for changing a label              : $($rdgj)"
                             }
-                            #
                             #Label is mandatory
                             if ($list.Contains("mandatory")){
                                 $list = $list -replace "\W",''
@@ -218,6 +217,12 @@ Process{
                                 $list = $list -replace "\W",''
                                 $hidebarbydefault = $list -replace "hidebarbydefault",""
                                 Write-Output "HideBarByDefault                                          : $($hidebarbydefault)"
+                            }
+                            #outlookjustifyuntrustedcollaborationlabel
+                            if ($list.Contains("outlookjustifyuntrustedcollaborationlabel")){
+                                #$list = $list -replace "\D",''
+                                $list = $list -replace "outlookjustifyuntrustedcollaborationlabel,",""
+                                Write-Output "outlookjustifyuntrustedcollaborationlabel                 : $($list)"
                             }
                         }
                         Write-Output ""
