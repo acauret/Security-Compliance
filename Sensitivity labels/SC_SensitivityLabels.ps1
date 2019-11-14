@@ -52,7 +52,7 @@ Displays the help file
     Tested          : Powershell Version 5.1
     Author          : Andrew Auret
     Email           : 
-    Version         : 1.0
+    Version         : 1.1
     Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)
     
     
@@ -155,6 +155,7 @@ Process{
                         Write-Output "Display Name   : $($label.DisplayName)"
                         Write-Output "Tooltip        : $($label.Tooltip)"
                         Write-Output "Description    : $($label.Comment)"
+                        Write-Output "ImmutableId    : $($label.ImmutableId)"
                         #
                         $labelEncryptAction = ($labelpolicyRule | Where-Object {$_.LabelActionName -eq 'encrypt'}).LabelActionName
                         If ($labelEncryptAction -eq "encrypt"){
