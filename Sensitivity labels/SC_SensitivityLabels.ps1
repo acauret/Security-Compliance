@@ -21,17 +21,14 @@
 .PARAMETER  Type
 Description: Determines what aspect of Sensitivity labels to query
 Possible values:  Label, LabelPolicy
-.PARAMETER  Credential
-  Description: For use with connecting the Security and Compliance center using Basic Auth
-  Possible values: User Principal Name
 .PARAMETER  MFA
 Description: Switch to specifiy using MFA with modern auth setting
 Possible values: -MFA
 .EXAMPLE
-  .\SC_SensitivityLabels.ps1 -Mode get -Type Label -MFA
+  .\SC_SensitivityLabels.ps1 -MFA -Mode get -Type Label
   Connects to the S&C Center to query the current label settings using Modern auth
 .EXAMPLE
-.\SC_SensitivityLabels.ps1 -Mode get -Type LabelPolicy -MFA
+.\SC_SensitivityLabels.ps1 -MFA -Mode get -Type LabelPolicy 
 Connects to the S&C Center to query the current labelPolicy settings using Modern auth
 .EXAMPLE
 .\SC_SensitivityLabels.ps1 -Mode get -Type LabelPolicy
@@ -61,17 +58,14 @@ Displays the help file
 #######################################################################################################################
 #--------------------------------------------------------------------------------------------------------#
 [OutputType()]
-[CmdletBinding(DefaultParameterSetName)]
+[CmdletBinding(DefaultParameterSetName,PositionalBinding=$true)]
 Param (
-    [Parameter(Mandatory=$true, Position = 0)]
-    [ValidateSet("get","set")]
-    [string]$Mode,
+    [Parameter(Mandatory = $False, Position = 0)]
+    [Switch]$MFA,
 
-    [Parameter(Mandatory = $False, Position = 3, ParameterSetName = 'Credential')]
-    [PSCredential]$Credential,
-
-    [Parameter(Mandatory = $False, Position = 3, ParameterSetName = 'MFA')]
-    [Switch]$MFA
+    [Parameter(Mandatory=$true, Position = 1)]
+        [ValidateSet("get","set")]
+        [string]$Mode
 ) 
 
 DynamicParam
@@ -83,7 +77,7 @@ DynamicParam
         System.Management.Automation.ParameterAttribute
       $attributes.ParameterSetName = "__AllParameterSets"
       $attributes.Mandatory = $true
-      $attributes.Position = 1
+      $attributes.Position = 2
       $attributeCollection = New-Object `
         -Type System.Collections.ObjectModel.Collection[System.Attribute]
 
@@ -104,10 +98,10 @@ DynamicParam
     {
         $Type = 'Type'
         $attributes = New-Object -Type `
-          System.Management.Automation.ParameterAttribute
-        $attributes.ParameterSetName = "__AllParameterSets"
+        System.Management.Automation.ParameterAttribute
+       $attributes.ParameterSetName = "__AllParameterSets"
         $attributes.Mandatory = $true
-        $attributes.Position = 1
+        $attributes.Position = 2
         $attributeCollection = New-Object `
           -Type System.Collections.ObjectModel.Collection[System.Attribute]
   
@@ -155,10 +149,10 @@ Process{
     }
     If (!($MFA.IsPresent))
     {
-        If (!($Credential.UserName)){
+        #If (!($Credential.UserName)){
             Write-Verbose "Gathering Credentials for non-MFA sign on"
             $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
-        }
+        #}
     }
     #
     If (!(Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
@@ -283,15 +277,14 @@ Process{
                 }
             }
         }
-        # TBC 
         "set" {
             switch ($PSBoundParameters.$Type) {
                 "Label" {
-
+                    # TBC
                   }
                 "LabelPolicy" {
-                    
-                    
+                    Write-Output "Getting the content of the current Sensitivity Label policies"
+                    $labelpolicies = Get-LabelPolicy
                 }
             }
         }
