@@ -98,8 +98,8 @@ DynamicParam
     {
         $Type = 'Type'
         $attributes = New-Object -Type `
-        System.Management.Automation.ParameterAttribute
-       $attributes.ParameterSetName = "__AllParameterSets"
+            System.Management.Automation.ParameterAttribute
+        $attributes.ParameterSetName = "__AllParameterSets"
         $attributes.Mandatory = $true
         $attributes.Position = 2
         $attributeCollection = New-Object `
@@ -112,12 +112,30 @@ DynamicParam
         $dynParam1 = New-Object -Type `
           System.Management.Automation.RuntimeDefinedParameter($Type, [string],
             $attributeCollection)
+
+        $PolicyName = 'PolicyName'
+        $attributes2 = New-Object -Type `
+            System.Management.Automation.ParameterAttribute
+        $attributes2.ParameterSetName = "__AllParameterSets"
+        $attributes2.Mandatory = $true
+        $attributes2.Position = 2
+        $attributeCollection2 = New-Object `
+          -Type System.Collections.ObjectModel.Collection[System.Attribute]
+  
+        # Add the attributes to the attributes collection
+        $attributeCollection2.Add($attributes2)
+          
+        $dynParam2 = New-Object -Type `
+          System.Management.Automation.RuntimeDefinedParameter($PolicyName, [string],
+            $attributeCollection2)
     
         $paramDictionary = New-Object `
           -Type System.Management.Automation.RuntimeDefinedParameterDictionary
         $paramDictionary.Add($Type, $dynParam1)
+        $paramDictionary.Add($PolicyName, $dynParam2)
         return $paramDictionary
-    }    
+    }
+  
 }
 
 #--------------------------------------------------------------------------------------------------------
@@ -149,10 +167,8 @@ Process{
     }
     If (!($MFA.IsPresent))
     {
-        #If (!($Credential.UserName)){
-            Write-Verbose "Gathering Credentials for non-MFA sign on"
-            $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
-        #}
+        Write-Verbose "Gathering Credentials for non-MFA sign on"
+        $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
     }
     #
     If (!(Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
@@ -180,6 +196,11 @@ Process{
                 break            
             }
         }
+    }
+
+    #
+    if ($PSBoundParameters.ContainsKey(("PolicyName"))){
+        $LabelPolicyName = $PSBoundParameters[$PolicyName]
     }
     #
     switch ($Mode) {
@@ -284,7 +305,30 @@ Process{
                   }
                 "LabelPolicy" {
                     Write-Output "Getting the content of the current Sensitivity Label policies"
-                    $labelpolicies = Get-LabelPolicy
+                    try {
+                        $labelpolicy = Get-LabelPolicy -Identity $LabelPolicyName -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Warning "The LabelPolicy:[$($LabelPolicyName)] does not exist"
+                        break
+                    }
+                    #
+                    Initialize-Modules("MSOnline")
+                    #Check if we are authenticated already before prompting
+                    If (!(MSOLConnected)){
+                        Write-Output "Prompting for Authentication since we still need seperate sessions for Exchange Online Remote PowerShell Module and Azure Active Directory PowerShell for Graph module"
+                        Connect-MsolService
+                    }
+                    #
+                    Write-Output "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups"
+                    foreach($Group in $labelpolicy.ModernGroupLocation.Name){
+                        $GroupType = (Get-MsolGroup -SearchString $Group).GroupType
+                        If (($GroupType -eq "DistributionList")){
+                            Write-Warning "Group: $($Group) is a $($GroupType) and could cause replication issues"
+                        }
+                    }
+                    
+
                 }
             }
         }
