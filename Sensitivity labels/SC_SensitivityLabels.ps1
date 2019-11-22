@@ -17,10 +17,10 @@
   Demo Control Script for querying Security and Compliance Center - Sensitivy Labels and Policies
 .PARAMETER  Mode
   Description: Determines the mode of operation of the script
-  Possible values: get
+  Possible values: get, set
 .PARAMETER  Type
 Description: Determines what aspect of Sensitivity labels to query
-Possible values: Label, LabelPolicy
+Possible values:  Label, LabelPolicy
 .PARAMETER  Credential
   Description: For use with connecting the Security and Compliance center using Basic Auth
   Possible values: User Principal Name
@@ -52,7 +52,7 @@ Displays the help file
     Tested          : Powershell Version 5.1
     Author          : Andrew Auret
     Email           : 
-    Version         : 1.2
+    Version         : 1.3
     Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)
     
     
@@ -67,17 +67,64 @@ Param (
     [ValidateSet("get","set")]
     [string]$Mode,
 
-    [Parameter(Mandatory=$true, Position = 1)]
-    [ValidateSet("Label","LabelPolicy")]
-    [string]$Type,
-
-    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'Credential')]
+    [Parameter(Mandatory = $False, Position = 3, ParameterSetName = 'Credential')]
     [PSCredential]$Credential,
 
-    [Parameter(Mandatory = $False, Position = 2, ParameterSetName = 'MFA')]
+    [Parameter(Mandatory = $False, Position = 3, ParameterSetName = 'MFA')]
     [Switch]$MFA
 ) 
 
+DynamicParam
+{
+    if ($Mode.Equals("get"))
+    {
+      $Type = 'Type'
+      $attributes = New-Object -Type `
+        System.Management.Automation.ParameterAttribute
+      $attributes.ParameterSetName = "__AllParameterSets"
+      $attributes.Mandatory = $true
+      $attributes.Position = 1
+      $attributeCollection = New-Object `
+        -Type System.Collections.ObjectModel.Collection[System.Attribute]
+
+      # Add the attributes to the attributes collection
+      $attributeCollection.Add($attributes)
+      $attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute(("Label","LabelPolicy")))) 
+
+      $dynParam1 = New-Object -Type `
+        System.Management.Automation.RuntimeDefinedParameter($Type, [string],
+          $attributeCollection)
+  
+      $paramDictionary = New-Object `
+        -Type System.Management.Automation.RuntimeDefinedParameterDictionary
+      $paramDictionary.Add($Type, $dynParam1)
+      return $paramDictionary
+    }
+    if ($Mode.Equals("set"))
+    {
+        $Type = 'Type'
+        $attributes = New-Object -Type `
+          System.Management.Automation.ParameterAttribute
+        $attributes.ParameterSetName = "__AllParameterSets"
+        $attributes.Mandatory = $true
+        $attributes.Position = 1
+        $attributeCollection = New-Object `
+          -Type System.Collections.ObjectModel.Collection[System.Attribute]
+  
+        # Add the attributes to the attributes collection
+        $attributeCollection.Add($attributes)
+        $attributeCollection.Add((New-Object System.Management.Automation.ValidateSetAttribute(("LabelPolicy")))) 
+  
+        $dynParam1 = New-Object -Type `
+          System.Management.Automation.RuntimeDefinedParameter($Type, [string],
+            $attributeCollection)
+    
+        $paramDictionary = New-Object `
+          -Type System.Management.Automation.RuntimeDefinedParameterDictionary
+        $paramDictionary.Add($Type, $dynParam1)
+        return $paramDictionary
+    }    
+}
 
 #--------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------
@@ -143,7 +190,7 @@ Process{
     #
     switch ($Mode) {
         "get" {
-            switch ($Type) {
+            switch ($PSBoundParameters.$Type) {
                 "Label" {
                     Write-Verbose  "Getting the content of the current Sensitivity Labels"
                     $labels = Get-Label
@@ -238,7 +285,7 @@ Process{
         }
         # TBC 
         "set" {
-            switch ($Type) {
+            switch ($PSBoundParameters.$Type) {
                 "Label" {
 
                   }
