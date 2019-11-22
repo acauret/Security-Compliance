@@ -339,14 +339,25 @@ Process{
                     #
                     Write-Output ""
                     $CSV = Import-CSVtoHash .\AdvancedSettings.csv
-                    Write-Host "Setting LabelPolicy - 'HideBarByDefault'" -ForegroundColor Green
-                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{HideBarByDefault="$($CSV.HideBarByDefault)"}
-                    Write-Host "Setting LabelPolicy - 'AttachmentAction'" -ForegroundColor Green
-                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{AttachmentAction="$($CSV.AttachmentAction)"}
-                    Write-Host "Setting LabelPolicy - 'OutlookJustifyUntrustedCollaborationLabel'" -ForegroundColor Green
-                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyUntrustedCollaborationLabel="$($CSV.OutlookJustifyUntrustedCollaborationLabel)"}
-                    Write-Host  "Setting LabelPolicy - 'OutlookJustifyTrustedDomains'" -ForegroundColor Green
-                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyTrustedDomains="$($CSV.OutlookJustifyTrustedDomains)"}
+                    If ($CSV.contains("HideBarByDefault")){
+                        Write-Host "Setting LabelPolicy - 'HideBarByDefault'" -ForegroundColor Green
+                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{HideBarByDefault="$($CSV.HideBarByDefault)"}
+                    }
+                    #
+                    If ($CSV.contains("AttachmentAction")){
+                        Write-Host "Setting LabelPolicy - 'AttachmentAction'" -ForegroundColor Green
+                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{AttachmentAction="$($CSV.AttachmentAction)"}
+                    }
+                    #
+                    If ($CSV.contains("OutlookJustifyUntrustedCollaborationLabel")){
+                        Write-Host "Setting LabelPolicy - 'OutlookJustifyUntrustedCollaborationLabel'" -ForegroundColor Green
+                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyUntrustedCollaborationLabel="$($CSV.OutlookJustifyUntrustedCollaborationLabel)"}
+                    }
+                    #
+                    If ($CSV.contains("OutlookJustifyTrustedDomains")){
+                        Write-Host  "Setting LabelPolicy - 'OutlookJustifyTrustedDomains'" -ForegroundColor Green
+                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyTrustedDomains="$($CSV.OutlookJustifyTrustedDomains)"}
+                    }
                     #
                     Write-Output ""
                     Write-Host  "Getting LabelPolicy - 'Advanced settings' - After Change" -ForegroundColor Blue
