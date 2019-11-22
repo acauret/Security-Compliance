@@ -310,7 +310,7 @@ Process{
                     # TBC
                 }
                 "LabelPolicy" {
-                    Write-Output "Getting the content of the current Sensitivity Label policies"
+                    Write-Host "Getting the content of the current Sensitivity Label policies" -ForegroundColor Blue
                     try {
                         $labelpolicy = Get-LabelPolicy -Identity $LabelPolicyName -ErrorAction Stop
                     }
@@ -322,11 +322,11 @@ Process{
                     Initialize-Modules("MSOnline")
                     #Check if we are authenticated already before prompting
                     If (!(MSOLConnected)){
-                        Write-Output "Prompting for Authentication since we still need seperate sessions for Exchange Online Remote PowerShell Module and Azure Active Directory PowerShell for Graph module"
+                        Write-Host "Prompting for Authentication since we still need seperate sessions for Exchange Online Remote PowerShell Module and Azure Active Directory PowerShell for Graph module" -ForegroundColor Green
                         Connect-MsolService
                     }
                     #
-                    Write-Output "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups"
+                    Write-Host "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups" -ForegroundColor Blue
                     foreach($Group in $labelpolicy.ModernGroupLocation.Name){
                         $MSOLGroup = Get-MsolGroup -SearchString $Group | Where-Object{$_.GroupType -eq "DistributionList"}
                         If ($MSOLGroup){
@@ -334,13 +334,24 @@ Process{
                         }
                     }
                     #
-                    Write-Output "Getting LabelPolicy - 'Advanced settings' - Before Change"
+                    Write-Host "Getting LabelPolicy - 'Advanced settings' - Before Change" -ForegroundColor Blue
                     Get-LabelPolicy -Identity $LabelPolicyName | Select-Object Settings -ExpandProperty Settings
                     #
-                    Write-Output "Setting LabelPolicy - 'Advanced settings'"
-                    #HideBarByDefault
-                    #(Import-Csv -Path .\AdvancedSettings.csv | Select-Object HideBarByDefault).HideBarByDefault
-                    #Set-LabelPolicy -Identity $LabelPolicyName
+                    Write-Output ""
+                    $CSV = Import-CSVtoHash .\AdvancedSettings.csv
+                    Write-Host "Setting LabelPolicy - 'HideBarByDefault'" -ForegroundColor Green
+                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{HideBarByDefault="$($CSV.HideBarByDefault)"}
+                    Write-Host "Setting LabelPolicy - 'AttachmentAction'" -ForegroundColor Green
+                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{AttachmentAction="$($CSV.AttachmentAction)"}
+                    Write-Host "Setting LabelPolicy - 'OutlookJustifyUntrustedCollaborationLabel'" -ForegroundColor Green
+                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyUntrustedCollaborationLabel="$($CSV.OutlookJustifyUntrustedCollaborationLabel)"}
+                    Write-Host  "Setting LabelPolicy - 'OutlookJustifyTrustedDomains'" -ForegroundColor Green
+                    Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{OutlookJustifyTrustedDomains="$($CSV.OutlookJustifyTrustedDomains)"}
+                    #
+                    Write-Output ""
+                    Write-Host  "Getting LabelPolicy - 'Advanced settings' - After Change" -ForegroundColor Blue
+                    Get-LabelPolicy -Identity $LabelPolicyName | Select-Object Settings -ExpandProperty Settings
+                    #
                 }
             }
         }

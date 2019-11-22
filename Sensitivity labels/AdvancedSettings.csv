@@ -1,4 +1,5 @@
 Key,Value
 HideBarByDefault,FALSE
 AttachmentAction,Automatic
-OutlookJustifyUntrustedCollaborationLabel,"2b6be9ea-f3b0-4423-a7d0-6e4ec546f4e5,5a6b19e8-2c77-4a55-a785-fc370c1920f6"
+OutlookJustifyUntrustedCollaborationLabel,
+OutlookJustifyTrustedDomains,
