@@ -52,7 +52,7 @@ Displays the help file
     Tested          : Powershell Version 5.1
     Author          : Andrew Auret
     Email           : 
-    Version         : 1.1
+    Version         : 1.2
     Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)
     
     
@@ -64,7 +64,7 @@ Displays the help file
 [CmdletBinding(DefaultParameterSetName)]
 Param (
     [Parameter(Mandatory=$true, Position = 0)]
-    [ValidateSet("get,create")]
+    [ValidateSet("get","set")]
     [string]$Mode,
 
     [Parameter(Mandatory=$true, Position = 1)]
@@ -148,7 +148,13 @@ Process{
                     Write-Verbose  "Getting the content of the current Sensitivity Labels"
                     $labels = Get-Label
                     foreach($label in $labels){
-                        $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name} -ErrorAction SilentlyContinue
+                        try {
+                            $labelpolicyRule = Get-Labelpolicyrule | Where-Object {$_.LabelName -eq $label.Name} -ErrorAction SilentlyContinue
+                        }
+                        catch {
+                            Write-Warning "The cmdlet 'Get-Labelpolicyrule' is not available for this tenant - Encryption and Content Marking will not be displayed correctly"
+                        }
+
                         Write-Output "Name           : $($label.Name)"
                         Write-Output "Created by     : $($label.CreatedBy)"
                         Write-Output "Last modified  : $($label.LastModifiedBy)"
@@ -231,7 +237,7 @@ Process{
             }
         }
         # TBC 
-        "create" {
+        "set" {
             switch ($Type) {
                 "Label" {
 
