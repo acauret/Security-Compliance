@@ -171,6 +171,12 @@ Process{
         $Credential = Get-Credential -Message "Please enter your Office 365 credentials"
     }
     #
+    If ((Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
+        If ((Get-PSSession).State -eq "Broken"){
+            Get-PSSession | Where-Object{$_.ConfigurationName -eq "Microsoft.Exchange"}  | Remove-PSSession
+        }
+    }
+    #
     If (!(Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
         If ($MFA.IsPresent){
             . $scriptFolder"\Exchange_Online_Module\CreateExoPSSession.ps1"
@@ -302,7 +308,7 @@ Process{
             switch ($PSBoundParameters.$Type) {
                 "Label" {
                     # TBC
-                  }
+                }
                 "LabelPolicy" {
                     Write-Output "Getting the content of the current Sensitivity Label policies"
                     try {
@@ -322,13 +328,19 @@ Process{
                     #
                     Write-Output "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups"
                     foreach($Group in $labelpolicy.ModernGroupLocation.Name){
-                        $GroupType = (Get-MsolGroup -SearchString $Group).GroupType
-                        If (($GroupType -eq "DistributionList")){
-                            Write-Warning "Group: $($Group) is a $($GroupType) and could cause replication issues"
+                        $MSOLGroup = Get-MsolGroup -SearchString $Group | Where-Object{$_.GroupType -eq "DistributionList"}
+                        If ($MSOLGroup){
+                           Write-Warning "Group: $($Group) is a $($MSOLGroup.GroupType) and could cause replication issues"
                         }
                     }
-                    
-
+                    #
+                    Write-Output "Getting LabelPolicy - 'Advanced settings' - Before Change"
+                    Get-LabelPolicy -Identity $LabelPolicyName | Select-Object Settings -ExpandProperty Settings
+                    #
+                    Write-Output "Setting LabelPolicy - 'Advanced settings'"
+                    #HideBarByDefault
+                    #(Import-Csv -Path .\AdvancedSettings.csv | Select-Object HideBarByDefault).HideBarByDefault
+                    #Set-LabelPolicy -Identity $LabelPolicyName
                 }
             }
         }

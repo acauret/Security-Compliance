@@ -44,6 +44,49 @@ function MSOLConnected {
     $result = $?
     return $result
 }
+
+Function Import-CSVtoHash {
+  
+    [cmdletbinding()]
+    
+    Param (
+    [Parameter(Position=0,Mandatory=$True,HelpMessage="Enter a filename and path for the CSV file")]
+    [ValidateNotNullorEmpty()]
+    [ValidateScript({Test-Path -Path $_})]
+    [string]$Path
+    )
+    
+    Write-Verbose "Importing data from $Path"
+    
+    Import-Csv -Path $path | ForEach-Object -begin {
+         #define an empty hash table
+         $hash=@{}
+        } -process {
+           <#
+           if there is a type column, then add the entry as that type
+           otherwise we'll treat it as a string
+           #>
+           if ($_.Type) {
+             
+             $type=[type]"$($_.type)"
+           }
+           else {
+             $type=[type]"string"
+           }
+           Write-Verbose "Adding $($_.key)"
+           Write-Verbose "Setting type to $type"
+           
+           $hash.Add($_.Key,($($_.Value) -as $type))
+    
+        } -end {
+          #write hash to the pipeline
+          Write-Output $hash
+        }
+    
+    write-verbose "Import complete"
+    
+} #end function
 #endregion
 Export-ModuleMember -Function Initialize-Modules, `
-                              MSOLConnected
+                              MSOLConnected,`
+                              Import-CSVtoHash
