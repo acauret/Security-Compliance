@@ -64,7 +64,7 @@ Displays the help file
 [CmdletBinding(DefaultParameterSetName)]
 Param (
     [Parameter(Mandatory=$true, Position = 0)]
-    [ValidateSet("get")]
+    [ValidateSet("get,create")]
     [string]$Mode,
 
     [Parameter(Mandatory=$true, Position = 1)]
@@ -231,7 +231,7 @@ Process{
             }
         }
         # TBC 
-        "test" {
+        "create" {
             switch ($Type) {
                 "Label" {
 
