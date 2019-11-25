@@ -269,6 +269,7 @@ Process{
                         }
                         #
                         $ContentMarking = ($labelpolicyRule | Where-Object {$_.LabelActionName -like 'applycontentmarking*'}).LabelActionName
+                        
                         If (!($null -eq $ContentMarking)){
                             Write-Output "Content marking: $($ContentMarking)"
                         }
