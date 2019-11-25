@@ -112,7 +112,7 @@ DynamicParam
         $dynParam1 = New-Object -Type `
           System.Management.Automation.RuntimeDefinedParameter($Type, [string],
             $attributeCollection)
-
+        ######################################################################
         $PolicyName = 'PolicyName'
         $attributes2 = New-Object -Type `
             System.Management.Automation.ParameterAttribute
@@ -128,11 +128,28 @@ DynamicParam
         $dynParam2 = New-Object -Type `
           System.Management.Automation.RuntimeDefinedParameter($PolicyName, [string],
             $attributeCollection2)
-    
+       ######################################################################
+        $CheckGroup = 'GroupCheck'
+        $attributes3 = New-Object -Type `
+            System.Management.Automation.ParameterAttribute
+        $attributes3.ParameterSetName = "__AllParameterSets"
+        $attributes3.Mandatory = $false
+        $attributes3.Position = 3
+        $attributeCollection3 = New-Object `
+          -Type System.Collections.ObjectModel.Collection[System.Attribute]
+  
+        # Add the attributes to the attributes collection
+        $attributeCollection3.Add($attributes3)
+          
+        $dynParam3 = New-Object -Type `
+          System.Management.Automation.RuntimeDefinedParameter($CheckGroup, [switch],
+            $attributeCollection3)
+       #-----------------------------------------------------------------------   
         $paramDictionary = New-Object `
           -Type System.Management.Automation.RuntimeDefinedParameterDictionary
         $paramDictionary.Add($Type, $dynParam1)
         $paramDictionary.Add($PolicyName, $dynParam2)
+        $paramDictionary.Add($CheckGroup, $dynParam3)
         return $paramDictionary
     }
   
@@ -319,20 +336,22 @@ Process{
                         break
                     }
                     #
-                    Initialize-Modules("MSOnline")
-                    #Check if we are authenticated already before prompting
-                    If (!(MSOLConnected)){
-                        Write-Host "Prompting for Authentication since we still need seperate sessions for Exchange Online Remote PowerShell Module and Azure Active Directory PowerShell for Graph module" -ForegroundColor Green
-                        Connect-MsolService
-                    }
-                    #
-                    Write-Host "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups" -ForegroundColor Blue
-                    foreach($Group in $labelpolicy.ModernGroupLocation.Name){
-                        $MSOLGroup = Get-MsolGroup -SearchString $Group | Where-Object{$_.GroupType -eq "DistributionList"}
-                        If ($MSOLGroup){
-                           Write-Warning "Group: $($Group) is a $($MSOLGroup.GroupType) and could cause replication issues"
+                    If ($PSBoundParameters.ContainsKey("GroupCheck")){
+                        Initialize-Modules("MSOnline")
+                        #Check if we are authenticated already before prompting
+                        If (!(MSOLConnected)){
+                            Write-Host "Prompting for Authentication since we still need seperate sessions for Exchange Online Remote PowerShell Module and Azure Active Directory PowerShell for Graph module" -ForegroundColor Green
+                            Connect-MsolService
                         }
-                    }
+                        #
+                        Write-Host "Checking the Groups that have been assigned to the Policy to ensure that they are Office 365 or MailEnabledSecurity groups" -ForegroundColor Blue
+                        foreach($Group in $labelpolicy.ModernGroupLocation.Name){
+                            $MSOLGroup = Get-MsolGroup -SearchString $Group | Where-Object{$_.GroupType -eq "DistributionList"}
+                            If ($MSOLGroup){
+                               Write-Warning "Group: $($Group) is a $($MSOLGroup.GroupType) and could cause replication issues"
+                            }
+                        }
+                    } 
                     #
                     Write-Host "Getting LabelPolicy - 'Advanced settings' - Before Change" -ForegroundColor Blue
                     Get-LabelPolicy -Identity $LabelPolicyName | Select-Object Settings -ExpandProperty Settings
