@@ -37,6 +37,12 @@ Connects to the S&C Center to query the current labelPolicy settings using Basic
 .\SC_SensitivityLabels.ps1 -Mode get -Type Label
 Connects to the S&C Center to query the current label settings using Basic auth
 .EXAMPLE
+.\SC_SensitivityLabels.ps1 -MFA -Mode set -Type LabelPolicy -PolicyName "Test"
+Connects to the S&C Center to set the defined LabelPolicy based on the settings within the CSV file
+.EXAMPLE
+.\SC_SensitivityLabels.ps1 -MFA -Mode set -Type LabelPolicy -PolicyName "Test" -GroupCheck
+Connects to the S&C Center to set the defined LabelPolicy based on the settings within the CSV file. Checks the LabelPolicy and displays warnings for any DL's that may be assigned.
+.EXAMPLE
 get-help .\SC_SensitivityLabels.ps1 -Detailed
 Displays the help file
 .INPUTS
