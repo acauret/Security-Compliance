@@ -341,7 +341,7 @@ Process{
                     $CSV = Import-CSVtoHash .\AdvancedSettings.csv
                     If ($CSV.contains("HideBarByDefault")){
                         Write-Host "Setting LabelPolicy - 'HideBarByDefault'" -ForegroundColor Green
-                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{HideBarByDefault="$($CSV.HideBarByDefault)"}
+                        Set-LabelPolicy -Identity $LabelPolicyName -AdvancedSettings @{HideBarByDefault="$(($CSV.HideBarByDefault).toLower())"}
                     }
                     #
                     If ($CSV.contains("AttachmentAction")){
