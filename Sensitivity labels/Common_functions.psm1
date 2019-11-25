@@ -39,12 +39,17 @@ function Initialize-Modules()
 }
 
 
+function MEOPMIntialized {
+    get-command Connect-IPPSSession -ErrorAction SilentlyContinue | Out-Null
+    $result = $?
+    return $result
+}
+
 function MSOLConnected {
     Get-MsolGroup -ErrorAction SilentlyContinue
     $result = $?
     return $result
 }
-
 Function Import-CSVtoHash {
   
     [cmdletbinding()]
@@ -89,4 +94,5 @@ Function Import-CSVtoHash {
 #endregion
 Export-ModuleMember -Function Initialize-Modules, `
                               MSOLConnected,`
-                              Import-CSVtoHash
+                              Import-CSVtoHash, `
+                              MEOPMIntialized

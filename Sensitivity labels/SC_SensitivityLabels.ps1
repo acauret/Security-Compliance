@@ -56,7 +56,7 @@ Displays the help file
     Author          : Andrew Auret
     Email           : 
     Version         : 1.3
-    Date            : 2019-11-07 (ISO 8601 standard date notation: YYYY-MM-DD)
+    Date            : 2019-11-25 (ISO 8601 standard date notation: YYYY-MM-DD)
     
     
 #>
@@ -186,8 +186,11 @@ Process{
     #
 
     If ($MFA.IsPresent){
-        Initialize-Modules("CreateExoPSSession")
+        if (!(MEOPMIntialized)){
+            Initialize-Modules("CreateExoPSSession")
+        }
     }
+    #
     If (!($MFA.IsPresent))
     {
         Write-Verbose "Gathering Credentials for non-MFA sign on"
@@ -202,7 +205,10 @@ Process{
     #
     If (!(Get-PSSession).ConfigurationName -eq "Microsoft.Exchange"){
         If ($MFA.IsPresent){
-            . $scriptFolder"\Exchange_Online_Module\CreateExoPSSession.ps1"
+            if (!(MEOPMIntialized)){
+                . $scriptFolder"\Exchange_Online_Module\CreateExoPSSession.ps1"
+            }
+            #
             Connect-IPPSSession
             Push-Location $scriptFolder
         }
@@ -289,7 +295,7 @@ Process{
                         Write-Output "Name           : $($labelpolicy.Name)"
                         Write-Output "Labels         : $($labelpolicy.Labels)"
                         Write-Output "-- Settings --"
-                        $Settings = $labelpolicies | Select-Object -ExpandProperty Settings
+                        $Settings = $labelpolicies | Where-Object {$_.Name -eq $labelpolicy.Name} |  Select-Object -ExpandProperty Settings
                         foreach($list in $Settings){
                             #Users must provide justification to remove a label or lower classification label
                             if ($list.Contains("requiredowngradejustification")){
